@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -95,6 +95,13 @@ export default function Login() {
           <Botao titulo="Entrar" onPress={handleEntrar} carregando={enviando} />
         </View>
 
+        <View style={styles.rodape}>
+          <Text style={[styles.rodapeTexto, { color: c.textoSuave }]}>Não tem conta?</Text>
+          <Link href="/cadastro" style={[styles.link, { color: c.primaria }]}>
+            Criar conta
+          </Link>
+        </View>
+
         <Text style={[styles.dica, { color: c.textoSuave }]}>Conta de teste: aluno@entrelinhas.com · senha 123</Text>
       </Tela>
     </KeyboardAvoidingView>
@@ -143,6 +150,18 @@ const styles = StyleSheet.create({
   },
   erroTexto: {
     fontSize: fonts.pequeno,
+  },
+  rodape: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  rodapeTexto: {
+    fontSize: fonts.corpo,
+  },
+  link: {
+    fontSize: fonts.corpo,
+    fontWeight: '700',
   },
   dica: {
     fontSize: fonts.pequeno,
