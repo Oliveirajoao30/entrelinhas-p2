@@ -186,3 +186,41 @@ export async function buscarObrasAutor(id: string): Promise<LivroResumo[]> {
     capaId: obra.covers?.find((capa) => capa > 0),
   }));
 }
+
+// Formato de /subjects/{slug}.json (só os campos usados).
+type RespostaGenero = {
+  works?: {
+    key: string;
+    title?: string;
+    authors?: { key?: string; name?: string }[];
+    cover_id?: number;
+    first_publish_year?: number;
+  }[];
+};
+
+// Livros de um gênero (assunto), 20 por página.
+export async function buscarPorGenero(slug: string, pagina = 1): Promise<LivroResumo[]> {
+  const offset = (pagina - 1) * LIMITE_POR_PAGINA;
+  const resposta = await fetch(
+    `${API}/subjects/${encodeURIComponent(slug)}.json?limit=${LIMITE_POR_PAGINA}&offset=${offset}`,
+  );
+  if (!resposta.ok) {
+    throw new Error(`Erro ${resposta.status}`);
+  }
+
+  const json = (await resposta.json()) as RespostaGenero;
+  return (json.works ?? []).map((obra) => {
+    const autores = obra.authors ?? [];
+    return {
+      id: semPrefixo(obra.key, '/works/'),
+      titulo: obra.title ?? 'Sem título',
+      autores: autores.map((a) => a.name).filter((nome): nome is string => Boolean(nome)),
+      autorIds: autores
+        .map((a) => a.key)
+        .filter((chave): chave is string => Boolean(chave))
+        .map((chave) => semPrefixo(chave, '/authors/')),
+      capaId: obra.cover_id ?? undefined,
+      ano: obra.first_publish_year ?? undefined,
+    };
+  });
+}
