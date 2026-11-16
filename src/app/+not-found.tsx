@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   texto: {
     fontSize: fonts.corpo,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: Math.round(fonts.corpo * 1.5),
   },
   link: {
     marginTop: spacing.md,

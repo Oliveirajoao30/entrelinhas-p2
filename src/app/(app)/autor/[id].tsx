@@ -14,6 +14,8 @@ function abrirLivro(livro: LivroResumo) {
 }
 
 const TAMANHO_FOTO = 96;
+// Entrelinha confortável para textos longos (biografia).
+const ALTURA_LINHA = Math.round(fonts.corpo * 1.5);
 
 function iniciaisDoNome(nome: string): string {
   const partes = nome.trim().split(/\s+/).filter(Boolean);
@@ -176,7 +178,11 @@ export default function TelaAutor() {
           <Text style={[styles.nome, { color: c.texto }]} numberOfLines={3}>
             {autor.nome}
           </Text>
-          {datas ? <Text style={[styles.datas, { color: c.textoSuave }]}>{datas}</Text> : null}
+          {datas ? (
+            <Text style={[styles.datas, { color: c.textoSuave }]} numberOfLines={2}>
+              {datas}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -244,7 +250,7 @@ const styles = StyleSheet.create({
   },
   bio: {
     fontSize: fonts.corpo,
-    lineHeight: 22,
+    lineHeight: ALTURA_LINHA,
   },
   secaoObras: {
     marginTop: spacing.md,

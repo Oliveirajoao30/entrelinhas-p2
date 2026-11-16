@@ -10,6 +10,8 @@ import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { useFetch } from '@/hooks/useFetch';
 
 const LARGURA_CAPA = 180;
+// Entrelinha confortável para textos longos (sinopse).
+const ALTURA_LINHA = Math.round(fonts.corpo * 1.5);
 
 // 'Science Fiction' -> 'science_fiction' (formato usado em /subjects/{slug}).
 function slugDoAssunto(assunto: string): string {
@@ -99,7 +101,9 @@ export default function DetalheLivro() {
       {cabecalho}
       <View style={styles.topo}>
         <Capa capaId={livro.capaId} titulo={livro.titulo} largura={LARGURA_CAPA} tamanho="L" />
-        <Text style={[styles.titulo, { color: c.texto }]}>{livro.titulo}</Text>
+        <Text style={[styles.titulo, { color: c.texto }]} numberOfLines={4}>
+          {livro.titulo}
+        </Text>
       </View>
 
       <AcoesLivro livro={livro} />
@@ -177,7 +181,7 @@ const styles = StyleSheet.create({
   },
   descricao: {
     fontSize: fonts.corpo,
-    lineHeight: 22,
+    lineHeight: ALTURA_LINHA,
   },
   autores: {
     flexDirection: 'row',

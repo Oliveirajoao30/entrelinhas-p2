@@ -206,7 +206,9 @@ export default function Buscar() {
                 pressed && styles.pressionado,
               ]}
             >
-              <Text style={[styles.filtroTexto, { color: ativo ? c.primariaTexto : c.texto }]}>{rotulo}</Text>
+              <Text style={[styles.filtroTexto, { color: ativo ? c.primariaTexto : c.texto }]} numberOfLines={1}>
+                {rotulo}
+              </Text>
             </Pressable>
           );
         })}
