@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import { Platform } from 'react-native';
 
 // Tema central do app (padrão da Aula 7): nenhuma cor "solta" nas telas.
@@ -64,9 +65,25 @@ export const fonts = {
   serifa: Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia, serif' }),
 } as const;
 
-// Hook usado por todas as telas e componentes.
-// Por enquanto o app usa sempre o modo escuro; a troca de tema entra depois
-// sem precisar mudar nenhuma tela.
+// Preferência do usuário: seguir o sistema ou forçar claro/escuro.
+export type PreferenciaTema = 'sistema' | ModoTema;
+
+export type TemaCtx = {
+  cores: Cores;
+  modo: ModoTema; // modo efetivo (já resolvido quando a preferência é 'sistema')
+  preferencia: PreferenciaTema;
+  setPreferencia: (p: PreferenciaTema) => void;
+};
+
+// O provider fica em context/TemaContext.tsx. Sem provider, vale o modo escuro.
+export const TemaContext = createContext<TemaCtx>({
+  cores: paletas.escuro,
+  modo: 'escuro',
+  preferencia: 'sistema',
+  setPreferencia: () => {},
+});
+
+// Hook usado por todas as telas e componentes: devolve as cores do tema ativo.
 export function useCores(): Cores {
-  return paletas.escuro;
+  return useContext(TemaContext).cores;
 }
