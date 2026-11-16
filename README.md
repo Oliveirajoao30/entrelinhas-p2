@@ -1,56 +1,77 @@
-# Welcome to your Expo app 👋
+# Entrelinhas
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile para leitores: descubra livros por gênero, busque títulos e autores na
+[Open Library](https://openlibrary.org), monte a sua estante (quero ler, lendo, lido), guarde
+favoritos e escreva anotações com nota para cada livro.
 
-## Get started
+Projeto da P2, feito com Expo + React Native + TypeScript.
 
-1. Install dependencies
+Vídeo: (link)
 
-   ```bash
-   npm install
-   ```
+## Telas
 
-2. Start the app
+**Conta**
+- **Onboarding**: apresentação do app, exibida só na primeira abertura.
+- **Login** e **Cadastro**: com validação dos campos; a sessão fica salva e o usuário continua logado ao reabrir o app.
 
-   ```bash
-   npx expo start
-   ```
+**Abas**
+- **Início**: saudação ao usuário e carrosséis de livros por gênero (Fantasia, Romance, Ficção científica, Mistério). Puxar para atualizar; funciona sem internet usando o cache local.
+- **Buscar**: busca na Open Library com filtro Tudo / Título / Autor, histórico de buscas recentes e estados de carregando, erro e vazio.
+- **Estante**: livros separados por status de leitura.
+- **Perfil**: avatar, nome, e-mail, bio, números da estante e menu para as outras telas; botão Sair com confirmação.
 
-In the output, you'll find options to open the app in a
+**Telas empilhadas**
+- **Detalhe do livro** (`/livro/[id]`): capa, sinopse, assuntos (abrem o gênero), link para o autor e ações de estante, favoritar e anotar.
+- **Autor** (`/autor/[id]`): foto, datas, biografia e lista de obras.
+- **Gênero** (`/genero/[slug]`): grade de 2 colunas com paginação infinita.
+- **Anotar** (modal): texto e nota de 1 a 5 para o livro.
+- **Favoritos** e **Minhas anotações**.
+- **Editar perfil**: nome e bio.
+- **Configurações**: tema claro, escuro ou do sistema e limpeza dos dados locais.
+- **Sobre o app**.
+- **404**: para rotas que não existem.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Tecnologias
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Expo SDK 58** e **Expo Router** (rotas por arquivos, grupos `(auth)` e `(app)`, abas e pilha)
+- **React Native** com **TypeScript**
+- **StyleSheet + Flexbox** para o layout, com tema central (`useCores`, `spacing`, `radius`, `fonts`)
+- **Open Library API** (`openlibrary.org`), sem chave, isolada em `src/api/openlibrary.ts`
+- **AsyncStorage** para estante, favoritos, anotações, tema, buscas recentes e cache da Início
+- **SecureStore** para a sessão do usuário
+- **expo-image** para capas e fotos de autores
 
-## Get a fresh project
+## Como rodar
 
-When you're ready, run:
+Pré-requisitos: Node.js 22 LTS e o app **Expo Go** no celular (Android ou iOS).
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Depois, escaneie o QR code com o Expo Go (Android) ou com a câmera (iOS). O celular e o computador
+precisam estar na mesma rede.
 
-### Other setup steps
+## Estrutura
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+src/
+  app/          rotas (Expo Router)
+  api/          acesso à Open Library
+  components/   ui/ (base) e livro/ (capa, cartões, carrosséis, estados)
+  constants/    tema
+  context/      sessão e tema
+  hooks/        useFetch
+  storage/      AsyncStorage (estante, favoritos, anotações)
+  types/        tipos compartilhados
+```
 
-## Learn more
+## Dupla
 
-To learn more about developing your project with Expo, look at the following resources:
+- João Victor
+- Sérgio
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+*Versão 1.0 — 2026-11-16*
