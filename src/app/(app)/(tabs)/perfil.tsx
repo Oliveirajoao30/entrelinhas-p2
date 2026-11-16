@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { ComponentProps, useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Botao } from '@/components/ui/Botao';
 import { Tela } from '@/components/ui/Tela';
@@ -45,6 +45,20 @@ export default function Perfil() {
   const { usuario, sair } = useAuth();
   const [contagem, setContagem] = useState<Record<StatusLeitura, number> | null>(null);
   const [erroEstante, setErroEstante] = useState(false);
+
+  function confirmarSaida() {
+    Alert.alert('Sair da conta', 'Tem certeza de que deseja sair?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          await sair();
+          router.replace('/login');
+        },
+      },
+    ]);
+  }
 
   // Recarrega a estante sempre que a aba volta a ficar visível.
   useFocusEffect(
@@ -116,7 +130,7 @@ export default function Perfil() {
         ))}
       </View>
 
-      <Botao titulo="Sair" variante="perigo" onPress={sair} />
+      <Botao titulo="Sair" variante="perigo" onPress={confirmarSaida} />
     </Tela>
   );
 }
