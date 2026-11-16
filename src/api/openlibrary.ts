@@ -2,7 +2,7 @@
 // Converte o JSON da API (em inglês) para os tipos do app em types/livro.ts.
 // As telas nunca leem o JSON cru: usam só as funções deste arquivo.
 
-import type { LivroResumo } from '@/types/livro';
+import type { LivroDetalhe, LivroResumo } from '@/types/livro';
 
 export const API = 'https://openlibrary.org';
 const CAPAS = 'https://covers.openlibrary.org';
@@ -70,4 +70,48 @@ export async function buscarLivros(
 
   const json = (await resposta.json()) as RespostaBusca;
   return (json.docs ?? []).map(docParaLivro);
+}
+
+// Textos longos da API (descrição, biografia) vêm como string ou { value }.
+type TextoApi = string | { value?: string };
+
+function textoDaApi(texto?: TextoApi): string {
+  if (!texto) return '';
+  return typeof texto === 'string' ? texto : (texto.value ?? '');
+}
+
+// Formato de /works/{id}.json (só os campos usados).
+type RespostaObra = {
+  key: string;
+  title?: string;
+  description?: TextoApi;
+  subjects?: string[];
+  covers?: number[];
+  authors?: { author?: { key?: string } }[];
+};
+
+const MAX_ASSUNTOS = 8;
+
+// Detalhe de uma obra. Este endpoint não traz o nome dos autores, só os ids.
+export async function buscarLivro(id: string): Promise<LivroDetalhe> {
+  const resposta = await fetch(`${API}/works/${encodeURIComponent(id)}.json`);
+  if (!resposta.ok) {
+    throw new Error(`Erro ${resposta.status}`);
+  }
+
+  const json = (await resposta.json()) as RespostaObra;
+  const autorIds = (json.authors ?? [])
+    .map((a) => a.author?.key)
+    .filter((chave): chave is string => Boolean(chave))
+    .map((chave) => semPrefixo(chave, '/authors/'));
+
+  return {
+    id: semPrefixo(json.key, '/works/'),
+    titulo: json.title ?? 'Sem título',
+    autores: [],
+    autorIds,
+    capaId: json.covers?.find((capa) => capa > 0),
+    descricao: textoDaApi(json.description).trim(),
+    assuntos: (json.subjects ?? []).slice(0, MAX_ASSUNTOS),
+  };
 }
