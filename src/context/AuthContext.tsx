@@ -15,7 +15,7 @@ type AuthCtx = {
   usuario: Usuario | null;
   carregando: boolean; // true enquanto lê a sessão salva
   entrar: (email: string, senha: string) => Promise<boolean>;
-  cadastrar: (dados: Conta) => Promise<void>;
+  cadastrar: (dados: Conta) => Promise<boolean>; // false se o e-mail já tem conta
   sair: () => Promise<void>;
   atualizarUsuario: (dados: Partial<Usuario>) => Promise<void>;
 };
@@ -89,9 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function cadastrar(dados: Conta) {
     const email = dados.email.trim().toLowerCase();
     const nova: Conta = { ...dados, email };
-    const contas = (await lerContas()).filter((c) => c.email.toLowerCase() !== email);
+    const contas = await lerContas();
+    // Não sobrescreve uma conta que já existe com o mesmo e-mail.
+    if (contas.some((c) => c.email.toLowerCase() === email)) return false;
     await salvarContas([...contas, nova]);
     await iniciarSessao(semSenha(nova));
+    return true;
   }
 
   async function sair() {

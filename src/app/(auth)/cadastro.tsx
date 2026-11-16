@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +7,17 @@ import { CampoTexto } from '@/components/ui/CampoTexto';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import {
+  SENHA_MINIMA,
+  validarConfirmacao,
+  validarEmail,
+  validarNome,
+  validarSenhaNova,
+} from '@/utils/validacao';
+
+type Erros = { nome: string; email: string; senha: string; confirmacao: string };
+
+const semErros: Erros = { nome: '', email: '', senha: '', confirmacao: '' };
 
 // Rota /cadastro: cria a conta e já entra no app.
 export default function Cadastro() {
@@ -18,24 +28,38 @@ export default function Cadastro() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState('');
+  const [confirmacao, setConfirmacao] = useState('');
+  const [erros, setErros] = useState<Erros>(semErros);
   const [enviando, setEnviando] = useState(false);
 
   async function handleCadastrar() {
-    if (!nome.trim() || !email.trim() || !senha) {
-      setErro('Preencha nome, e-mail e senha.');
-      return;
-    }
+    const novos: Erros = {
+      nome: validarNome(nome),
+      email: validarEmail(email),
+      senha: validarSenhaNova(senha),
+      confirmacao: validarConfirmacao(senha, confirmacao),
+    };
+    setErros(novos);
+    if (Object.values(novos).some(Boolean)) return;
 
     setEnviando(true);
-    await cadastrar({ nome: nome.trim(), email, senha });
+    const criou = await cadastrar({ nome: nome.trim(), email, senha });
     setEnviando(false);
+
+    if (!criou) {
+      setErros({ ...semErros, email: 'Já existe uma conta com este e-mail. Faça login.' });
+      return;
+    }
     // replace: depois de criar a conta, voltar não deve levar ao cadastro.
     router.replace('/');
   }
 
-  function limparErro() {
-    if (erro) setErro('');
+  // Ao digitar, some o erro só daquele campo.
+  function alterar(campo: keyof Erros, setValor: (t: string) => void) {
+    return (t: string) => {
+      setValor(t);
+      setErros((e) => (e[campo] ? { ...e, [campo]: '' } : e));
+    };
   }
 
   return (
@@ -54,10 +78,8 @@ export default function Cadastro() {
             placeholder="Como quer ser chamado"
             autoCapitalize="words"
             value={nome}
-            onChangeText={(t) => {
-              setNome(t);
-              limparErro();
-            }}
+            erro={erros.nome}
+            onChangeText={alterar('nome', setNome)}
           />
           <CampoTexto
             rotulo="E-mail"
@@ -66,29 +88,26 @@ export default function Cadastro() {
             autoCapitalize="none"
             autoCorrect={false}
             value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              limparErro();
-            }}
+            erro={erros.email}
+            onChangeText={alterar('email', setEmail)}
           />
           <CampoTexto
             rotulo="Senha"
-            placeholder="Crie uma senha"
+            placeholder={`Pelo menos ${SENHA_MINIMA} caracteres`}
             secureTextEntry
             value={senha}
-            onChangeText={(t) => {
-              setSenha(t);
-              limparErro();
-            }}
+            erro={erros.senha}
+            onChangeText={alterar('senha', setSenha)}
+          />
+          <CampoTexto
+            rotulo="Confirmar senha"
+            placeholder="Repita a senha"
+            secureTextEntry
+            value={confirmacao}
+            erro={erros.confirmacao}
+            onChangeText={alterar('confirmacao', setConfirmacao)}
             onSubmitEditing={handleCadastrar}
           />
-
-          {erro ? (
-            <View style={styles.erro}>
-              <Ionicons name="alert-circle" size={16} color={c.erro} />
-              <Text style={[styles.erroTexto, { color: c.erro }]}>{erro}</Text>
-            </View>
-          ) : null}
 
           <Botao titulo="Criar conta" onPress={handleCadastrar} carregando={enviando} />
         </View>
@@ -124,14 +143,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.lg,
-  },
-  erro: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  erroTexto: {
-    fontSize: fonts.pequeno,
   },
   rodape: {
     flexDirection: 'row',

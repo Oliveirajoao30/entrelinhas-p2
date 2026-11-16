@@ -8,6 +8,7 @@ import { CampoTexto } from '@/components/ui/CampoTexto';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { validarEmail, validarSenhaLogin } from '@/utils/validacao';
 
 // Rota /login: o grupo (auth) não aparece na URL.
 export default function Login() {
@@ -18,10 +19,16 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState(''); // erro geral (credenciais)
+  const [erros, setErros] = useState({ email: '', senha: '' }); // erro de cada campo
   const [enviando, setEnviando] = useState(false);
 
   async function handleEntrar() {
+    // Valida antes de consultar as contas salvas.
+    const novos = { email: validarEmail(email), senha: validarSenhaLogin(senha) };
+    setErros(novos);
+    if (novos.email || novos.senha) return;
+
     setEnviando(true);
     const ok = await entrar(email, senha);
     setEnviando(false);
@@ -57,9 +64,11 @@ export default function Login() {
             autoCapitalize="none"
             autoCorrect={false}
             value={email}
+            erro={erros.email}
             onChangeText={(t) => {
               setEmail(t);
               setErro('');
+              setErros((e) => ({ ...e, email: '' }));
             }}
           />
 
@@ -69,9 +78,11 @@ export default function Login() {
               placeholder="Sua senha"
               secureTextEntry={!mostrarSenha}
               value={senha}
+              erro={erros.senha}
               onChangeText={(t) => {
                 setSenha(t);
                 setErro('');
+                setErros((e) => ({ ...e, senha: '' }));
               }}
               onSubmitEditing={handleEntrar}
             />
@@ -138,10 +149,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.lg,
   },
+  // Ancorado pelo topo (rótulo + metade do campo), assim não sai do lugar
+  // quando aparece a mensagem de erro embaixo da senha.
   olho: {
     position: 'absolute',
     right: spacing.lg,
-    bottom: 15,
+    top: 36,
   },
   erro: {
     flexDirection: 'row',
