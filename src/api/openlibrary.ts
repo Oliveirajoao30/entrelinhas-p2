@@ -2,7 +2,7 @@
 // Converte o JSON da API (em inglês) para os tipos do app em types/livro.ts.
 // As telas nunca leem o JSON cru: usam só as funções deste arquivo.
 
-import type { LivroDetalhe, LivroResumo } from '@/types/livro';
+import type { Autor, LivroDetalhe, LivroResumo } from '@/types/livro';
 
 export const API = 'https://openlibrary.org';
 const CAPAS = 'https://covers.openlibrary.org';
@@ -75,9 +75,17 @@ export async function buscarLivros(
 // Textos longos da API (descrição, biografia) vêm como string ou { value }.
 type TextoApi = string | { value?: string };
 
+// Também remove as notas de rodapé em markdown que a API costuma trazer,
+// como "([Source][1].)" e linhas "[1]: http://...".
 function textoDaApi(texto?: TextoApi): string {
   if (!texto) return '';
-  return typeof texto === 'string' ? texto : (texto.value ?? '');
+  const bruto = typeof texto === 'string' ? texto : (texto.value ?? '');
+  return bruto
+    .replace(/\r\n/g, '\n')
+    .replace(/^\s*\[\d+\]:\s*\S+.*$/gm, '')
+    .replace(/\(\[[^\]]+\]\[\d+\]\.?\)/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 // Formato de /works/{id}.json (só os campos usados).
@@ -113,5 +121,34 @@ export async function buscarLivro(id: string): Promise<LivroDetalhe> {
     capaId: json.covers?.find((capa) => capa > 0),
     descricao: textoDaApi(json.description).trim(),
     assuntos: (json.subjects ?? []).slice(0, MAX_ASSUNTOS),
+  };
+}
+
+// Formato de /authors/{id}.json (só os campos usados).
+type RespostaAutor = {
+  key: string;
+  name?: string;
+  personal_name?: string;
+  bio?: TextoApi;
+  birth_date?: string;
+  death_date?: string;
+  photos?: number[];
+};
+
+// Dados de um autor: nome, datas, biografia e foto.
+export async function buscarAutor(id: string): Promise<Autor> {
+  const resposta = await fetch(`${API}/authors/${encodeURIComponent(id)}.json`);
+  if (!resposta.ok) {
+    throw new Error(`Erro ${resposta.status}`);
+  }
+
+  const json = (await resposta.json()) as RespostaAutor;
+  return {
+    id: semPrefixo(json.key, '/authors/'),
+    nome: json.name ?? json.personal_name ?? 'Autor desconhecido',
+    bio: textoDaApi(json.bio),
+    nascimento: json.birth_date,
+    falecimento: json.death_date,
+    fotoId: json.photos?.find((foto) => foto > 0),
   };
 }
