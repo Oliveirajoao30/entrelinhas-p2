@@ -15,6 +15,8 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/* Modal: sobe por cima da tela atual, ideal para criar ou editar */}
+      <Stack.Screen name="anotar" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
