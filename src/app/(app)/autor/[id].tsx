@@ -1,7 +1,8 @@
+import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { buscarAutor, buscarObrasAutor } from '@/api/openlibrary';
+import { buscarAutor, buscarObrasAutor, fotoAutorUrl } from '@/api/openlibrary';
 import { CartaoLivro } from '@/components/livro/CartaoLivro';
 import { EstadoTela } from '@/components/livro/EstadoTela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
@@ -10,6 +11,42 @@ import type { Autor, LivroResumo } from '@/types/livro';
 
 function abrirLivro(livro: LivroResumo) {
   router.push({ pathname: '/livro/[id]', params: { id: livro.id, titulo: livro.titulo } });
+}
+
+const TAMANHO_FOTO = 96;
+
+function iniciaisDoNome(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  const primeira = partes[0]?.[0] ?? '';
+  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : '';
+  return (primeira + ultima).toUpperCase() || '?';
+}
+
+// Foto circular do autor. Sem foto, mostra as iniciais do nome.
+function FotoAutor({ fotoId, nome }: { fotoId?: number; nome: string }) {
+  const c = useCores();
+  const url = fotoAutorUrl(fotoId, 'M');
+
+  if (!url) {
+    return (
+      <View
+        style={[styles.foto, styles.semFoto, { backgroundColor: c.superficieAlta }]}
+        accessibilityLabel={`${nome}, sem foto`}
+      >
+        <Text style={[styles.iniciais, { color: c.primaria }]}>{iniciaisDoNome(nome)}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: url }}
+      style={[styles.foto, { backgroundColor: c.superficieAlta }]}
+      contentFit="cover"
+      transition={200}
+      accessibilityLabel={`Foto de ${nome}`}
+    />
+  );
 }
 
 type PropsObras = {
@@ -53,8 +90,11 @@ function PlaceholderAutor() {
   return (
     <View style={styles.conteudo} accessibilityLabel="Carregando autor" accessibilityRole="progressbar">
       <View style={styles.topo}>
-        <View style={[styles.placeholderNome, bloco]} />
-        <View style={[styles.placeholderDatas, bloco]} />
+        <View style={[styles.foto, bloco]} />
+        <View style={styles.info}>
+          <View style={[styles.placeholderNome, bloco]} />
+          <View style={[styles.placeholderDatas, bloco]} />
+        </View>
       </View>
       <View style={[styles.placeholderLinha, styles.placeholderSecao, bloco]} />
       <View style={[styles.placeholderLinha, bloco]} />
@@ -131,8 +171,13 @@ export default function TelaAutor() {
     >
       {cabecalho}
       <View style={styles.topo}>
-        <Text style={[styles.nome, { color: c.texto }]}>{autor.nome}</Text>
-        {datas ? <Text style={[styles.datas, { color: c.textoSuave }]}>{datas}</Text> : null}
+        <FotoAutor fotoId={autor.fotoId} nome={autor.nome} />
+        <View style={styles.info}>
+          <Text style={[styles.nome, { color: c.texto }]} numberOfLines={3}>
+            {autor.nome}
+          </Text>
+          {datas ? <Text style={[styles.datas, { color: c.textoSuave }]}>{datas}</Text> : null}
+        </View>
       </View>
 
       <Text style={[styles.secao, { color: c.texto }]}>Biografia</Text>
@@ -160,8 +205,29 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   topo: {
-    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
     marginBottom: spacing.md,
+  },
+  info: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  foto: {
+    width: TAMANHO_FOTO,
+    height: TAMANHO_FOTO,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
+  semFoto: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iniciais: {
+    fontSize: fonts.titulo,
+    fontFamily: fonts.serifa,
+    fontWeight: '700',
   },
   nome: {
     fontSize: fonts.titulo,
