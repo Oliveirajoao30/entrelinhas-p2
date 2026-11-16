@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { ComponentProps } from 'react';
 
-import { useCores } from '@/constants/theme';
+import { fonts, useCores } from '@/constants/theme';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
 
@@ -24,6 +24,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: c.primaria,
         tabBarInactiveTintColor: c.textoSuave,
         tabBarStyle: { backgroundColor: c.superficie, borderTopColor: c.borda },
+        tabBarLabelStyle: { fontSize: fonts.pequeno - 2, fontWeight: '600' },
+        // Fundo de cada aba igual ao do tema, sem flash branco ao trocar.
+        sceneStyle: { backgroundColor: c.fundo },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Início', tabBarIcon: icone('home', 'home-outline') }} />
