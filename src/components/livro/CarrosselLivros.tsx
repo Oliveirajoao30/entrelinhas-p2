@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { buscarPorGenero } from '@/api/openlibrary';
 import { Capa } from '@/components/livro/Capa';
 import { EstadoTela } from '@/components/livro/EstadoTela';
 import { fonts, spacing, useCores } from '@/constants/theme';
-import { useFetch } from '@/hooks/useFetch';
+import { ler, salvar } from '@/storage/armazenamento';
 import type { LivroResumo } from '@/types/livro';
 
 type Props = {
@@ -21,10 +22,63 @@ function abrirLivro(livro: LivroResumo) {
   router.push({ pathname: '/livro/[id]', params: { id: livro.id, titulo: livro.titulo } });
 }
 
+const chaveCache = (slug: string) => `cache:inicio:${slug}`;
+
+// Padrão da Aula 10: mostra o que está salvo, busca na API, atualiza e regrava o cache.
+// Sem internet, continua mostrando o cache; sem cache, mostra o erro.
+function useLivrosComCache(slug: string) {
+  const [livros, setLivros] = useState<LivroResumo[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const montado = useRef(true);
+
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+    };
+  }, []);
+
+  const carregar = useCallback(async () => {
+    setErro(null);
+    const salvos = await ler<LivroResumo[] | null>(chaveCache(slug), null);
+    const temCache = Boolean(salvos && salvos.length > 0);
+    if (!montado.current) return;
+    if (temCache) {
+      setLivros(salvos);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const novos = await buscarPorGenero(slug);
+      if (!montado.current) return;
+      setLivros(novos);
+      setOffline(false);
+      // Falha ao gravar o cache não é falta de internet: os livros já estão na tela.
+      salvar(chaveCache(slug), novos).catch(() => {});
+    } catch (e) {
+      if (!montado.current) return;
+      if (temCache) setOffline(true);
+      else setErro(e instanceof Error ? e.message : 'Sem conexão.');
+    } finally {
+      if (montado.current) setLoading(false);
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  return { livros, loading, erro, offline, recarregar: carregar };
+}
+
 // Seção da Início: título do gênero, "Ver todos" e uma fileira de capas.
 export function CarrosselLivros({ titulo, slug }: Props) {
   const c = useCores();
-  const { dados: livros, loading, erro, recarregar } = useFetch(() => buscarPorGenero(slug), [slug]);
+  const { livros, loading, erro, offline, recarregar } = useLivrosComCache(slug);
 
   function verTodos() {
     router.push({ pathname: '/genero/[slug]', params: { slug, nome: titulo } });
@@ -69,6 +123,9 @@ export function CarrosselLivros({ titulo, slug }: Props) {
           <Text style={[styles.verTodos, { color: c.primaria }]}>Ver todos</Text>
         </Pressable>
       </View>
+      {offline ? (
+        <Text style={[styles.aviso, { color: c.textoSuave }]}>Sem conexão: mostrando os livros salvos.</Text>
+      ) : null}
       <View style={styles.conteudo}>{renderConteudo()}</View>
     </View>
   );
@@ -96,6 +153,9 @@ const styles = StyleSheet.create({
   },
   conteudo: {
     minHeight: ALTURA_CONTEUDO,
+  },
+  aviso: {
+    fontSize: fonts.pequeno,
   },
   lista: {
     gap: spacing.md,
