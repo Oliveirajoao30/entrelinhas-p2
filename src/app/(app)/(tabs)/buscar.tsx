@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { FlatList, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { buscarLivros } from '@/api/openlibrary';
+import { buscarLivros, type CampoBusca } from '@/api/openlibrary';
 import { CartaoLivro } from '@/components/livro/CartaoLivro';
 import { EstadoTela } from '@/components/livro/EstadoTela';
 import { Botao } from '@/components/ui/Botao';
@@ -11,8 +11,6 @@ import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { ler, salvar } from '@/storage/armazenamento';
 import type { LivroResumo } from '@/types/livro';
-
-type CampoBusca = 'q' | 'title' | 'author';
 
 const FILTROS: { campo: CampoBusca; rotulo: string; dica: string }[] = [
   { campo: 'q', rotulo: 'Tudo', dica: 'Título ou autor' },

@@ -1,14 +1,14 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { capaUrl } from '@/api/openlibrary';
+import { capaUrl, type TamanhoImagem } from '@/api/openlibrary';
 import { fonts, radius, useCores } from '@/constants/theme';
 
 type Props = {
   capaId?: number;
   titulo: string;
   largura?: number;
-  tamanho?: 'S' | 'M' | 'L';
+  tamanho?: TamanhoImagem;
 };
 
 // Proporção padrão de capa de livro (largura : altura = 2 : 3).
