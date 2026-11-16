@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { buscarAutor, buscarObrasAutor } from '@/api/openlibrary';
 import { CartaoLivro } from '@/components/livro/CartaoLivro';
 import { EstadoTela } from '@/components/livro/EstadoTela';
-import { fonts, spacing, useCores } from '@/constants/theme';
+import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { useFetch } from '@/hooks/useFetch';
 import type { Autor, LivroResumo } from '@/types/livro';
 
@@ -17,12 +17,21 @@ type PropsObras = {
   loading: boolean;
   erro: string | null;
   nomeAutor: string;
+  onTentarDeNovo: () => void;
 };
 
 // Seção "Obras": lista de livros do autor, com os estados de carregamento.
-function SecaoObras({ obras, loading, erro, nomeAutor }: PropsObras) {
+function SecaoObras({ obras, loading, erro, nomeAutor, onTentarDeNovo }: PropsObras) {
   if (loading) return <EstadoTela tipo="carregando" mensagem="Carregando obras..." />;
-  if (erro) return <EstadoTela tipo="erro" mensagem={`Não foi possível carregar as obras (${erro}).`} />;
+  if (erro) {
+    return (
+      <EstadoTela
+        tipo="erro"
+        mensagem={`Não foi possível carregar as obras (${erro}).`}
+        onTentarDeNovo={onTentarDeNovo}
+      />
+    );
+  }
   if (!obras || obras.length === 0) return <EstadoTela tipo="vazio" mensagem="Nenhuma obra encontrada." />;
 
   return (
@@ -32,6 +41,25 @@ function SecaoObras({ obras, loading, erro, nomeAutor }: PropsObras) {
         const livro = obra.autores.length > 0 ? obra : { ...obra, autores: [nomeAutor] };
         return <CartaoLivro key={obra.id} livro={livro} onPress={() => abrirLivro(livro)} />;
       })}
+    </View>
+  );
+}
+
+// Placeholder no formato do nome, das datas e da biografia enquanto o autor carrega.
+function PlaceholderAutor() {
+  const c = useCores();
+  const bloco = { backgroundColor: c.superficieAlta };
+
+  return (
+    <View style={styles.conteudo} accessibilityLabel="Carregando autor" accessibilityRole="progressbar">
+      <View style={styles.topo}>
+        <View style={[styles.placeholderNome, bloco]} />
+        <View style={[styles.placeholderDatas, bloco]} />
+      </View>
+      <View style={[styles.placeholderLinha, styles.placeholderSecao, bloco]} />
+      <View style={[styles.placeholderLinha, bloco]} />
+      <View style={[styles.placeholderLinha, bloco]} />
+      <View style={[styles.placeholderLinha, styles.placeholderLinhaCurta, bloco]} />
     </View>
   );
 }
@@ -49,7 +77,7 @@ function textoDatas(autor: Autor): string {
 export default function TelaAutor() {
   const c = useCores();
   const { id, nome } = useLocalSearchParams<{ id: string; nome?: string }>();
-  const { dados: autor, loading, erro } = useFetch(() => buscarAutor(id), [id]);
+  const { dados: autor, loading, erro, recarregar } = useFetch(() => buscarAutor(id), [id]);
   const obras = useFetch(() => buscarObrasAutor(id), [id]);
 
   const cabecalho = (
@@ -66,7 +94,7 @@ export default function TelaAutor() {
     return (
       <View style={[styles.tela, { backgroundColor: c.fundo }]}>
         {cabecalho}
-        <EstadoTela tipo="carregando" mensagem="Carregando autor..." />
+        <PlaceholderAutor />
       </View>
     );
   }
@@ -75,7 +103,11 @@ export default function TelaAutor() {
     return (
       <View style={[styles.tela, { backgroundColor: c.fundo }]}>
         {cabecalho}
-        <EstadoTela tipo="erro" mensagem={`Não foi possível carregar o autor (${erro}).`} />
+        <EstadoTela
+          tipo="erro"
+          mensagem={`Não foi possível carregar o autor (${erro}).`}
+          onTentarDeNovo={recarregar}
+        />
       </View>
     );
   }
@@ -107,7 +139,13 @@ export default function TelaAutor() {
       <Text style={[styles.bio, { color: c.textoSuave }]}>{autor.bio || 'Biografia não disponível.'}</Text>
 
       <Text style={[styles.secao, styles.secaoObras, { color: c.texto }]}>Obras</Text>
-      <SecaoObras obras={obras.dados} loading={obras.loading} erro={obras.erro} nomeAutor={autor.nome} />
+      <SecaoObras
+        obras={obras.dados}
+        loading={obras.loading}
+        erro={obras.erro}
+        nomeAutor={autor.nome}
+        onTentarDeNovo={obras.recarregar}
+      />
     </ScrollView>
   );
 }
@@ -147,5 +185,26 @@ const styles = StyleSheet.create({
   },
   lista: {
     gap: spacing.sm,
+  },
+  placeholderNome: {
+    width: '65%',
+    height: fonts.titulo,
+    borderRadius: radius.sm,
+  },
+  placeholderDatas: {
+    width: '40%',
+    height: fonts.corpo,
+    borderRadius: radius.sm,
+  },
+  placeholderSecao: {
+    width: '35%',
+    height: fonts.subtitulo,
+  },
+  placeholderLinha: {
+    height: fonts.corpo,
+    borderRadius: radius.sm,
+  },
+  placeholderLinhaCurta: {
+    width: '60%',
   },
 });

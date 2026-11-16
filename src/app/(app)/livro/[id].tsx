@@ -24,11 +24,30 @@ function abrirAutor(autorId: string) {
   router.push({ pathname: '/autor/[id]', params: { id: autorId } });
 }
 
+// Placeholder no formato da capa e do título enquanto o livro carrega.
+function PlaceholderLivro() {
+  const c = useCores();
+  const bloco = { backgroundColor: c.superficieAlta };
+
+  return (
+    <View style={styles.conteudo} accessibilityLabel="Carregando livro" accessibilityRole="progressbar">
+      <View style={styles.topo}>
+        <View style={[styles.placeholderCapa, bloco]} />
+        <View style={[styles.placeholderTitulo, bloco]} />
+      </View>
+      <View style={[styles.placeholderLinha, styles.placeholderSecao, bloco]} />
+      <View style={[styles.placeholderLinha, bloco]} />
+      <View style={[styles.placeholderLinha, bloco]} />
+      <View style={[styles.placeholderLinha, styles.placeholderLinhaCurta, bloco]} />
+    </View>
+  );
+}
+
 // Detalhe de um livro: busca a obra na Open Library pelo id da rota.
 export default function DetalheLivro() {
   const c = useCores();
   const { id, titulo } = useLocalSearchParams<{ id: string; titulo?: string }>();
-  const { dados: livro, loading, erro } = useFetch(() => buscarLivro(id), [id]);
+  const { dados: livro, loading, erro, recarregar } = useFetch(() => buscarLivro(id), [id]);
 
   const cabecalho = (
     <Stack.Screen
@@ -44,7 +63,7 @@ export default function DetalheLivro() {
     return (
       <View style={[styles.tela, { backgroundColor: c.fundo }]}>
         {cabecalho}
-        <EstadoTela tipo="carregando" mensagem="Carregando livro..." />
+        <PlaceholderLivro />
       </View>
     );
   }
@@ -53,7 +72,11 @@ export default function DetalheLivro() {
     return (
       <View style={[styles.tela, { backgroundColor: c.fundo }]}>
         {cabecalho}
-        <EstadoTela tipo="erro" mensagem={`Não foi possível carregar o livro (${erro}).`} />
+        <EstadoTela
+          tipo="erro"
+          mensagem={`Não foi possível carregar o livro (${erro}).`}
+          onTentarDeNovo={recarregar}
+        />
       </View>
     );
   }
@@ -180,5 +203,26 @@ const styles = StyleSheet.create({
   },
   pressionado: {
     opacity: 0.7,
+  },
+  placeholderCapa: {
+    width: LARGURA_CAPA,
+    height: LARGURA_CAPA * 1.5,
+    borderRadius: radius.sm,
+  },
+  placeholderTitulo: {
+    width: '70%',
+    height: fonts.titulo,
+    borderRadius: radius.sm,
+  },
+  placeholderSecao: {
+    width: '35%',
+    height: fonts.subtitulo,
+  },
+  placeholderLinha: {
+    height: fonts.corpo,
+    borderRadius: radius.sm,
+  },
+  placeholderLinhaCurta: {
+    width: '60%',
   },
 });
