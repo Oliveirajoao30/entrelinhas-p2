@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { FlatList, Keyboard, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { FlatList, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { buscarLivros } from '@/api/openlibrary';
 import { CartaoLivro } from '@/components/livro/CartaoLivro';
@@ -8,13 +8,24 @@ import { EstadoTela } from '@/components/livro/EstadoTela';
 import { Botao } from '@/components/ui/Botao';
 import { CampoTexto } from '@/components/ui/CampoTexto';
 import { Tela } from '@/components/ui/Tela';
-import { fonts, spacing, useCores } from '@/constants/theme';
+import { fonts, radius, spacing, useCores } from '@/constants/theme';
+import { ler, salvar } from '@/storage/armazenamento';
 import type { LivroResumo } from '@/types/livro';
+
+const CHAVE_RECENTES = 'buscas-recentes';
+const MAX_RECENTES = 8;
+
+// Coloca o termo no topo, sem repetir (ignorando maiúsculas) e com no máximo 8 itens.
+function adicionarRecente(lista: string[], termo: string): string[] {
+  const semRepetir = lista.filter((t) => t.toLowerCase() !== termo.toLowerCase());
+  return [termo, ...semRepetir].slice(0, MAX_RECENTES);
+}
 
 // Aba Buscar: pesquisa livros na Open Library por título ou autor.
 export default function Buscar() {
   const c = useCores();
   const [termo, setTermo] = useState('');
+  const [recentes, setRecentes] = useState<string[]>([]);
   const [termoBuscado, setTermoBuscado] = useState<string | null>(null);
   const [livros, setLivros] = useState<LivroResumo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,11 +34,42 @@ export default function Buscar() {
   // Ignora respostas de buscas antigas quando o usuário busca de novo rápido.
   const ultimaBusca = useRef(0);
 
+  useEffect(() => {
+    ler<string[]>(CHAVE_RECENTES, []).then(setRecentes);
+  }, []);
+
+  function registrarRecente(limpo: string) {
+    setRecentes((atuais) => {
+      const nova = adicionarRecente(atuais, limpo);
+      salvar(CHAVE_RECENTES, nova).catch(() => {
+        // Falha ao gravar o histórico não impede a busca.
+      });
+      return nova;
+    });
+  }
+
+  function limparRecentes() {
+    setRecentes([]);
+    salvar<string[]>(CHAVE_RECENTES, []).catch(() => {});
+  }
+
+  function alterarTermo(texto: string) {
+    setTermo(texto);
+    // Campo vazio volta para a tela inicial, com as buscas recentes.
+    if (!texto.trim()) setTermoBuscado(null);
+  }
+
+  function buscarRecente(recente: string) {
+    setTermo(recente);
+    buscar(recente);
+  }
+
   async function buscar(texto: string = termo) {
     const limpo = texto.trim();
     if (!limpo) return;
 
     Keyboard.dismiss();
+    registrarRecente(limpo);
     const numero = ++ultimaBusca.current;
     setTermoBuscado(limpo);
     setLoading(true);
@@ -51,9 +93,40 @@ export default function Buscar() {
   function renderConteudo() {
     if (termoBuscado === null) {
       return (
-        <View style={styles.dica}>
-          <Text style={[styles.dicaTitulo, { color: c.texto }]}>O que vamos ler hoje?</Text>
-          <Text style={[styles.dicaTexto, { color: c.textoSuave }]}>Digite um título ou autor.</Text>
+        <View style={styles.inicio}>
+          {recentes.length > 0 ? (
+            <View style={styles.recentes}>
+              <View style={styles.recentesCabecalho}>
+                <Text style={[styles.recentesTitulo, { color: c.texto }]}>Buscas recentes</Text>
+                <Pressable onPress={limparRecentes} accessibilityRole="button" hitSlop={spacing.sm}>
+                  <Text style={[styles.limpar, { color: c.primaria }]}>Limpar</Text>
+                </Pressable>
+              </View>
+              <View style={styles.chips}>
+                {recentes.map((recente) => (
+                  <Pressable
+                    key={recente}
+                    onPress={() => buscarRecente(recente)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Buscar ${recente} de novo`}
+                    style={({ pressed }) => [
+                      styles.chip,
+                      { backgroundColor: c.superficieAlta, borderColor: c.borda },
+                      pressed && styles.pressionado,
+                    ]}
+                  >
+                    <Text style={[styles.chipTexto, { color: c.texto }]} numberOfLines={1}>
+                      {recente}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
+          <View style={styles.dica}>
+            <Text style={[styles.dicaTitulo, { color: c.texto }]}>O que vamos ler hoje?</Text>
+            <Text style={[styles.dicaTexto, { color: c.textoSuave }]}>Digite um título ou autor.</Text>
+          </View>
         </View>
       );
     }
@@ -91,7 +164,7 @@ export default function Buscar() {
             rotulo="Título ou autor"
             placeholder="Ex.: Dom Casmurro"
             value={termo}
-            onChangeText={setTermo}
+            onChangeText={alterarTermo}
             onSubmitEditing={() => buscar()}
             returnKeyType="search"
             autoCorrect={false}
@@ -117,6 +190,45 @@ const styles = StyleSheet.create({
   },
   campo: {
     flex: 1,
+  },
+  inicio: {
+    flex: 1,
+    gap: spacing.xl,
+  },
+  recentes: {
+    gap: spacing.md,
+  },
+  recentesCabecalho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  recentesTitulo: {
+    fontSize: fonts.corpo,
+    fontWeight: '700',
+  },
+  limpar: {
+    fontSize: fonts.pequeno,
+    fontWeight: '700',
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    maxWidth: '100%',
+  },
+  chipTexto: {
+    fontSize: fonts.pequeno,
+    fontWeight: '600',
+  },
+  pressionado: {
+    opacity: 0.7,
   },
   dica: {
     flex: 1,
