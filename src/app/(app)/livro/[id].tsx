@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { buscarLivro } from '@/api/openlibrary';
 import { Capa } from '@/components/livro/Capa';
 import { EstadoTela } from '@/components/livro/EstadoTela';
+import { AcoesLivro } from '@/components/ui/AcoesLivro';
 import { Botao } from '@/components/ui/Botao';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { useFetch } from '@/hooks/useFetch';
@@ -77,6 +78,8 @@ export default function DetalheLivro() {
         <Capa capaId={livro.capaId} titulo={livro.titulo} largura={LARGURA_CAPA} tamanho="L" />
         <Text style={[styles.titulo, { color: c.texto }]}>{livro.titulo}</Text>
       </View>
+
+      <AcoesLivro livro={livro} />
 
       {livro.autorIds.length > 0 ? (
         <View style={styles.autores}>
