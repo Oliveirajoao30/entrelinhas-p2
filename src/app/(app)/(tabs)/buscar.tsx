@@ -12,6 +12,14 @@ import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { ler, salvar } from '@/storage/armazenamento';
 import type { LivroResumo } from '@/types/livro';
 
+type CampoBusca = 'q' | 'title' | 'author';
+
+const FILTROS: { campo: CampoBusca; rotulo: string; dica: string }[] = [
+  { campo: 'q', rotulo: 'Tudo', dica: 'Título ou autor' },
+  { campo: 'title', rotulo: 'Título', dica: 'Título do livro' },
+  { campo: 'author', rotulo: 'Autor', dica: 'Nome do autor' },
+];
+
 const CHAVE_RECENTES = 'buscas-recentes';
 const MAX_RECENTES = 8;
 
@@ -26,6 +34,7 @@ export default function Buscar() {
   const c = useCores();
   const [termo, setTermo] = useState('');
   const [recentes, setRecentes] = useState<string[]>([]);
+  const [filtro, setFiltro] = useState<CampoBusca>('q');
   const [termoBuscado, setTermoBuscado] = useState<string | null>(null);
   const [livros, setLivros] = useState<LivroResumo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +73,14 @@ export default function Buscar() {
     buscar(recente);
   }
 
-  async function buscar(texto: string = termo) {
+  function escolherFiltro(campo: CampoBusca) {
+    if (campo === filtro) return;
+    setFiltro(campo);
+    // Com uma busca na tela, refaz a busca já com o novo filtro.
+    if (termoBuscado) buscar(termoBuscado, campo);
+  }
+
+  async function buscar(texto: string = termo, campo: CampoBusca = filtro) {
     const limpo = texto.trim();
     if (!limpo) return;
 
@@ -75,7 +91,7 @@ export default function Buscar() {
     setLoading(true);
     setErro(null);
     try {
-      const resultado = await buscarLivros(limpo);
+      const resultado = await buscarLivros(limpo, campo);
       if (numero === ultimaBusca.current) setLivros(resultado);
     } catch (e) {
       if (numero === ultimaBusca.current) {
@@ -161,8 +177,8 @@ export default function Buscar() {
       <View style={styles.barraBusca}>
         <View style={styles.campo}>
           <CampoTexto
-            rotulo="Título ou autor"
-            placeholder="Ex.: Dom Casmurro"
+            rotulo={FILTROS.find((f) => f.campo === filtro)?.dica ?? 'Título ou autor'}
+            placeholder={filtro === 'author' ? 'Ex.: Machado de Assis' : 'Ex.: Dom Casmurro'}
             value={termo}
             onChangeText={alterarTermo}
             onSubmitEditing={() => buscar()}
@@ -171,6 +187,29 @@ export default function Buscar() {
           />
         </View>
         <Botao titulo="Buscar" onPress={() => buscar()} desabilitado={!termo.trim()} />
+      </View>
+      <View style={styles.filtros} accessibilityRole="tablist">
+        {FILTROS.map(({ campo, rotulo }) => {
+          const ativo = campo === filtro;
+          return (
+            <Pressable
+              key={campo}
+              onPress={() => escolherFiltro(campo)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: ativo }}
+              style={({ pressed }) => [
+                styles.filtro,
+                {
+                  backgroundColor: ativo ? c.primaria : c.superficieAlta,
+                  borderColor: ativo ? c.primaria : c.borda,
+                },
+                pressed && styles.pressionado,
+              ]}
+            >
+              <Text style={[styles.filtroTexto, { color: ativo ? c.primariaTexto : c.texto }]}>{rotulo}</Text>
+            </Pressable>
+          );
+        })}
       </View>
       {renderConteudo()}
     </Tela>
@@ -190,6 +229,21 @@ const styles = StyleSheet.create({
   },
   campo: {
     flex: 1,
+  },
+  filtros: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  filtro: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  filtroTexto: {
+    fontSize: fonts.pequeno,
+    fontWeight: '700',
   },
   inicio: {
     flex: 1,
