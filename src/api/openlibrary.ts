@@ -152,3 +152,37 @@ export async function buscarAutor(id: string): Promise<Autor> {
     fotoId: json.photos?.find((foto) => foto > 0),
   };
 }
+
+// Formato de /authors/{id}/works.json (só os campos usados).
+type RespostaObrasAutor = {
+  entries?: {
+    key: string;
+    title?: string;
+    covers?: number[];
+    authors?: { author?: { key?: string } }[];
+  }[];
+};
+
+const LIMITE_OBRAS_AUTOR = 20;
+
+// Obras de um autor. Este endpoint não traz nomes de autores nem o ano.
+export async function buscarObrasAutor(id: string): Promise<LivroResumo[]> {
+  const resposta = await fetch(
+    `${API}/authors/${encodeURIComponent(id)}/works.json?limit=${LIMITE_OBRAS_AUTOR}`,
+  );
+  if (!resposta.ok) {
+    throw new Error(`Erro ${resposta.status}`);
+  }
+
+  const json = (await resposta.json()) as RespostaObrasAutor;
+  return (json.entries ?? []).map((obra) => ({
+    id: semPrefixo(obra.key, '/works/'),
+    titulo: obra.title ?? 'Sem título',
+    autores: [],
+    autorIds: (obra.authors ?? [])
+      .map((a) => a.author?.key)
+      .filter((chave): chave is string => Boolean(chave))
+      .map((chave) => semPrefixo(chave, '/authors/')),
+    capaId: obra.covers?.find((capa) => capa > 0),
+  }));
+}

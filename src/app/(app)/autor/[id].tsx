@@ -1,11 +1,40 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { buscarAutor } from '@/api/openlibrary';
+import { buscarAutor, buscarObrasAutor } from '@/api/openlibrary';
+import { CartaoLivro } from '@/components/livro/CartaoLivro';
 import { EstadoTela } from '@/components/livro/EstadoTela';
 import { fonts, spacing, useCores } from '@/constants/theme';
 import { useFetch } from '@/hooks/useFetch';
-import type { Autor } from '@/types/livro';
+import type { Autor, LivroResumo } from '@/types/livro';
+
+function abrirLivro(livro: LivroResumo) {
+  router.push({ pathname: '/livro/[id]', params: { id: livro.id, titulo: livro.titulo } });
+}
+
+type PropsObras = {
+  obras: LivroResumo[] | null;
+  loading: boolean;
+  erro: string | null;
+  nomeAutor: string;
+};
+
+// Seção "Obras": lista de livros do autor, com os estados de carregamento.
+function SecaoObras({ obras, loading, erro, nomeAutor }: PropsObras) {
+  if (loading) return <EstadoTela tipo="carregando" mensagem="Carregando obras..." />;
+  if (erro) return <EstadoTela tipo="erro" mensagem={`Não foi possível carregar as obras (${erro}).`} />;
+  if (!obras || obras.length === 0) return <EstadoTela tipo="vazio" mensagem="Nenhuma obra encontrada." />;
+
+  return (
+    <View style={styles.lista}>
+      {obras.map((obra) => {
+        // A API de obras não traz nomes: usa o nome do autor desta tela.
+        const livro = obra.autores.length > 0 ? obra : { ...obra, autores: [nomeAutor] };
+        return <CartaoLivro key={obra.id} livro={livro} onPress={() => abrirLivro(livro)} />;
+      })}
+    </View>
+  );
+}
 
 // "1916 – 1990", "Nascido em 1950" ou '' quando a API não traz datas.
 function textoDatas(autor: Autor): string {
@@ -21,6 +50,7 @@ export default function TelaAutor() {
   const c = useCores();
   const { id, nome } = useLocalSearchParams<{ id: string; nome?: string }>();
   const { dados: autor, loading, erro } = useFetch(() => buscarAutor(id), [id]);
+  const obras = useFetch(() => buscarObrasAutor(id), [id]);
 
   const cabecalho = (
     <Stack.Screen
@@ -75,6 +105,9 @@ export default function TelaAutor() {
 
       <Text style={[styles.secao, { color: c.texto }]}>Biografia</Text>
       <Text style={[styles.bio, { color: c.textoSuave }]}>{autor.bio || 'Biografia não disponível.'}</Text>
+
+      <Text style={[styles.secao, styles.secaoObras, { color: c.texto }]}>Obras</Text>
+      <SecaoObras obras={obras.dados} loading={obras.loading} erro={obras.erro} nomeAutor={autor.nome} />
     </ScrollView>
   );
 }
@@ -108,5 +141,11 @@ const styles = StyleSheet.create({
   bio: {
     fontSize: fonts.corpo,
     lineHeight: 22,
+  },
+  secaoObras: {
+    marginTop: spacing.md,
+  },
+  lista: {
+    gap: spacing.sm,
   },
 });
