@@ -1,12 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CartaoLivro } from '@/components/livro/CartaoLivro';
 import { EstadoTela } from '@/components/livro/EstadoTela';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
-import { listarEstante } from '@/storage/estante';
+import { listarEstante, mudarStatus, removerDaEstante } from '@/storage/estante';
 import { ItemEstante, rotulosStatus, StatusLeitura } from '@/types/livro';
 
 const ordemStatus: StatusLeitura[] = ['quero-ler', 'lendo', 'lido'];
@@ -32,6 +33,25 @@ export default function Estante() {
 
   const visiveis = (itens ?? []).filter((i) => i.status === filtro);
 
+  async function mover(item: ItemEstante, status: StatusLeitura) {
+    await mudarStatus(item.livro.id, status);
+    setItens(await listarEstante());
+  }
+
+  function confirmarRemocao(item: ItemEstante) {
+    Alert.alert('Remover da estante', `Remover "${item.livro.titulo}" da sua estante?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: async () => {
+          await removerDaEstante(item.livro.id);
+          setItens(await listarEstante());
+        },
+      },
+    ]);
+  }
+
   function renderConteudo() {
     if (itens === null) return <EstadoTela tipo="carregando" />;
     if (visiveis.length === 0) return <EstadoTela tipo="vazio" mensagem={mensagensVazio[filtro]} />;
@@ -42,12 +62,38 @@ export default function Estante() {
         contentContainerStyle={styles.lista}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <CartaoLivro
-            livro={item.livro}
-            onPress={() =>
-              router.push({ pathname: '/livro/[id]', params: { id: item.livro.id, titulo: item.livro.titulo } })
-            }
-          />
+          <View style={styles.item}>
+            <CartaoLivro
+              livro={item.livro}
+              onPress={() =>
+                router.push({ pathname: '/livro/[id]', params: { id: item.livro.id, titulo: item.livro.titulo } })
+              }
+            />
+            {/* Ações: mover para outro status ou remover */}
+            <View style={styles.acoes}>
+              {ordemStatus
+                .filter((s) => s !== item.status)
+                .map((s) => (
+                  <Pressable
+                    key={s}
+                    onPress={() => mover(item, s)}
+                    accessibilityLabel={`Mover ${item.livro.titulo} para ${rotulosStatus[s]}`}
+                    style={[styles.acao, { borderColor: c.borda }]}
+                  >
+                    <Ionicons name="swap-horizontal" size={14} color={c.textoSuave} />
+                    <Text style={[styles.acaoTexto, { color: c.texto }]}>{rotulosStatus[s]}</Text>
+                  </Pressable>
+                ))}
+              <Pressable
+                onPress={() => confirmarRemocao(item)}
+                accessibilityLabel={`Remover ${item.livro.titulo} da estante`}
+                style={[styles.acao, styles.remover, { borderColor: c.erro }]}
+              >
+                <Ionicons name="trash-outline" size={14} color={c.erro} />
+                <Text style={[styles.acaoTexto, { color: c.erro }]}>Remover</Text>
+              </Pressable>
+            </View>
+          </View>
         )}
       />
     );
@@ -105,8 +151,32 @@ const styles = StyleSheet.create({
     fontSize: fonts.pequeno,
     fontWeight: '700',
   },
-  lista: {
+  item: {
     gap: spacing.sm,
+  },
+  acoes: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  acao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  remover: {
+    marginLeft: 'auto',
+  },
+  acaoTexto: {
+    fontSize: fonts.pequeno,
+    fontWeight: '600',
+  },
+  lista: {
+    gap: spacing.lg,
     paddingBottom: spacing.xl,
   },
 });
