@@ -9,7 +9,9 @@ const CAPAS = 'https://covers.openlibrary.org';
 const LIMITE_POR_PAGINA = 20;
 const LIMITE_OBRAS_AUTOR = 20;
 const MAX_ASSUNTOS = 8;
+const MAX_AUTORES = 5;
 const SEM_TITULO = 'Sem título';
+const AUTOR_DESCONHECIDO = 'Autor desconhecido';
 
 export type TamanhoImagem = 'S' | 'M' | 'L';
 export type CampoBusca = 'q' | 'title' | 'author';
@@ -149,14 +151,29 @@ export async function buscarLivros(
   }));
 }
 
-// Detalhe de uma obra. Este endpoint não traz o nome dos autores, só os ids.
+// Nome de um autor pelo id. Se a requisição falhar, o detalhe do livro
+// continua abrindo e o autor aparece como desconhecido.
+async function nomeDoAutor(autorId: string): Promise<string> {
+  try {
+    const autor = await buscarAutor(autorId);
+    return autor.nome;
+  } catch {
+    return AUTOR_DESCONHECIDO;
+  }
+}
+
+// Detalhe de uma obra. Este endpoint não traz o nome dos autores, só os ids,
+// então os nomes são buscados em /authors/{id}.json (em paralelo).
+// autores[i] corresponde a autorIds[i].
 export async function buscarLivro(id: string): Promise<LivroDetalhe> {
   const json = await obterJson<RespostaObra>(`/works/${encodeURIComponent(id)}.json`);
+  const autorIds = idsDeAutores((json.authors ?? []).map((a) => a.author?.key)).slice(0, MAX_AUTORES);
+  const autores = await Promise.all(autorIds.map(nomeDoAutor));
   return {
     id: semPrefixo(json.key, '/works/'),
     titulo: json.title ?? SEM_TITULO,
-    autores: [],
-    autorIds: idsDeAutores((json.authors ?? []).map((a) => a.author?.key)),
+    autores,
+    autorIds,
     capaId: primeiraImagem(json.covers),
     descricao: textoDaApi(json.description),
     assuntos: (json.subjects ?? []).slice(0, MAX_ASSUNTOS),
@@ -168,7 +185,7 @@ export async function buscarAutor(id: string): Promise<Autor> {
   const json = await obterJson<RespostaAutor>(`/authors/${encodeURIComponent(id)}.json`);
   return {
     id: semPrefixo(json.key, '/authors/'),
-    nome: json.name ?? json.personal_name ?? 'Autor desconhecido',
+    nome: json.name ?? json.personal_name ?? AUTOR_DESCONHECIDO,
     bio: textoDaApi(json.bio),
     nascimento: json.birth_date,
     falecimento: json.death_date,
