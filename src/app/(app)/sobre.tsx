@@ -17,7 +17,7 @@ const recursos: { icone: NomeIcone; texto: string }[] = [
   { icone: 'contrast-outline', texto: 'Tema claro e escuro' },
 ];
 
-const dupla = ['João Victor Oliveira', 'Sérgio'];
+const dupla = ['João Victor Oliveira da Silva', 'Sérgio Murilo Nogueira'];
 
 // Versão lida do app.json em tempo de execução.
 const versao = Constants.expoConfig?.version ?? '1.0.0';

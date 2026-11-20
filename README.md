@@ -69,8 +69,8 @@ src/
 
 ## Dupla
 
-- João Victor
-- Sérgio
+- João Victor Oliveira da Silva
+- Sérgio Murilo Nogueira
 
 ---
 
