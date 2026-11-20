@@ -26,6 +26,12 @@ function abrirAutor(autorId: string) {
   router.push({ pathname: '/autor/[id]', params: { id: autorId } });
 }
 
+// "Ver Roald Dahl"; sem nome conhecido, cai para "Ver autor" / "Ver autor 2".
+function tituloBotaoAutor(nome: string | undefined, indice: number, total: number): string {
+  if (nome && nome !== 'Autor desconhecido') return `Ver ${nome}`;
+  return total > 1 ? `Ver autor ${indice + 1}` : 'Ver autor';
+}
+
 // Placeholder no formato da capa e do título enquanto o livro carrega.
 function PlaceholderLivro() {
   const c = useCores();
@@ -104,6 +110,11 @@ export default function DetalheLivro() {
         <Text style={[styles.titulo, { color: c.texto }]} numberOfLines={4}>
           {livro.titulo}
         </Text>
+        {livro.autores.length > 0 ? (
+          <Text style={[styles.subtitulo, { color: c.textoSuave }]} numberOfLines={2}>
+            {livro.autores.join(', ')}
+          </Text>
+        ) : null}
       </View>
 
       <AcoesLivro livro={livro} />
@@ -113,7 +124,7 @@ export default function DetalheLivro() {
           {livro.autorIds.map((autorId, indice) => (
             <Botao
               key={autorId}
-              titulo={livro.autorIds.length > 1 ? `Ver autor ${indice + 1}` : 'Ver autor'}
+              titulo={tituloBotaoAutor(livro.autores[indice], indice, livro.autorIds.length)}
               variante="secundario"
               onPress={() => abrirAutor(autorId)}
             />
@@ -173,6 +184,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serifa,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  subtitulo: {
+    fontSize: fonts.corpo,
+    textAlign: 'center',
+    marginTop: -spacing.md,
   },
   secao: {
     fontSize: fonts.subtitulo,
