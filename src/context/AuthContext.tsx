@@ -1,5 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStoreNativo from 'expo-secure-store';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { ler, remover, salvar } from '@/storage/armazenamento';
 import { Usuario } from '@/types/livro';
@@ -21,6 +22,16 @@ type AuthCtx = {
 };
 
 const AuthContext = createContext<AuthCtx | null>(null);
+
+// O SecureStore só existe no celular. Na versão web usamos o localStorage do navegador.
+const SecureStore =
+  Platform.OS === 'web'
+    ? {
+        getItemAsync: async (chave: string) => localStorage.getItem(chave),
+        setItemAsync: async (chave: string, valor: string) => localStorage.setItem(chave, valor),
+        deleteItemAsync: async (chave: string) => localStorage.removeItem(chave),
+      }
+    : SecureStoreNativo;
 
 // Chaves do SecureStore aceitam só letras, números, '.', '-' e '_'.
 const CHAVE_CONTAS = 'contas';

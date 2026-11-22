@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { ComponentProps } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Botao } from '@/components/ui/Botao';
+import { avisar, confirmar } from '@/utils/confirmar';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, PreferenciaTema, radius, spacing, useCores } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -28,35 +29,22 @@ export default function Configuracoes() {
   const { sair } = useAuth();
 
   function confirmarLimpeza() {
-    Alert.alert(
+    confirmar(
       'Limpar dados locais',
       'Isso apaga sua estante, favoritos, anotações e buscas recentes deste aparelho. Sua conta continua.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Limpar',
-          style: 'destructive',
-          onPress: async () => {
-            await Promise.all(chavesDeLeitura.map(remover));
-            Alert.alert('Pronto', 'Os dados de leitura foram apagados.');
-          },
-        },
-      ],
+      'Limpar',
+      async () => {
+        await Promise.all(chavesDeLeitura.map(remover));
+        avisar('Pronto', 'Os dados de leitura foram apagados.');
+      },
     );
   }
 
   function confirmarSaida() {
-    Alert.alert('Sair', 'Deseja sair da sua conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          await sair();
-          router.replace('/login');
-        },
-      },
-    ]);
+    confirmar('Sair', 'Deseja sair da sua conta?', 'Sair', async () => {
+      await sair();
+      router.replace('/login');
+    });
   }
 
   return (

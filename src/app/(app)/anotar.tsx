@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Botao } from '@/components/ui/Botao';
+import { confirmar } from '@/utils/confirmar';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { lerAnotacao, removerAnotacao, salvarAnotacao } from '@/storage/anotacoes';
@@ -42,17 +43,10 @@ export default function Anotar() {
   }
 
   function handleExcluir() {
-    Alert.alert('Excluir anotação', 'Deseja apagar a anotação deste livro?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: async () => {
-          await removerAnotacao(id);
-          router.back();
-        },
-      },
-    ]);
+    confirmar('Excluir anotação', 'Deseja apagar a anotação deste livro?', 'Excluir', async () => {
+      await removerAnotacao(id);
+      router.back();
+    });
   }
 
   return (

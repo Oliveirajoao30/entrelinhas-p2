@@ -2,6 +2,9 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
+
+import { LARGURA_WEB } from '@/constants/theme';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { TemaProvider, useTema } from '@/context/TemaContext';
@@ -21,11 +24,14 @@ function Navegacao() {
   if (carregando) return null;
 
   return (
-    <>
+    <View style={[styles.fundo, { backgroundColor: cores.superficieAlta }]}>
       {/* Ícones da barra de status claros no modo escuro e vice-versa */}
       <StatusBar style={modo === 'escuro' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.fundo } }} />
-    </>
+      {/* No navegador o app vira uma coluna centralizada; no celular ocupa a tela toda */}
+      <View style={[styles.coluna, { backgroundColor: cores.fundo }]}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.fundo } }} />
+      </View>
+    </View>
   );
 }
 
@@ -40,3 +46,12 @@ export default function RootLayout() {
     </TemaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  fundo: { flex: 1 },
+  coluna: {
+    flex: 1,
+    width: '100%',
+    ...(Platform.OS === 'web' && { maxWidth: LARGURA_WEB, alignSelf: 'center' as const }),
+  },
+});

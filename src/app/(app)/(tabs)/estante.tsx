@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CartaoLivro } from '@/components/livro/CartaoLivro';
+import { confirmar } from '@/utils/confirmar';
 import { EstadoTela } from '@/components/livro/EstadoTela';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
@@ -39,17 +40,10 @@ export default function Estante() {
   }
 
   function confirmarRemocao(item: ItemEstante) {
-    Alert.alert('Remover da estante', `Remover "${item.livro.titulo}" da sua estante?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Remover',
-        style: 'destructive',
-        onPress: async () => {
-          await removerDaEstante(item.livro.id);
-          setItens(await listarEstante());
-        },
-      },
-    ]);
+    confirmar('Remover da estante', `Remover "${item.livro.titulo}" da sua estante?`, 'Remover', async () => {
+      await removerDaEstante(item.livro.id);
+      setItens(await listarEstante());
+    });
   }
 
   function renderConteudo() {

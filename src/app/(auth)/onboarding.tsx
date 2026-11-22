@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ComponentProps, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Botao } from '@/components/ui/Botao';
-import { fonts, radius, spacing, useCores } from '@/constants/theme';
+import { fonts, LARGURA_WEB, radius, spacing, useCores } from '@/constants/theme';
 import { salvar } from '@/storage/armazenamento';
 
 type Slide = { icone: ComponentProps<typeof Ionicons>['name']; titulo: string; texto: string };
@@ -22,7 +22,10 @@ export const CHAVE_ONBOARDING = 'onboarding-visto';
 export default function Onboarding() {
   const c = useCores();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width: larguraJanela } = useWindowDimensions();
+  // Na web o app fica numa coluna de no máximo LARGURA_WEB (ver _layout.tsx).
+  const naWeb = Platform.OS === 'web';
+  const width = naWeb ? Math.min(larguraJanela, LARGURA_WEB) : larguraJanela;
   const lista = useRef<FlatList<Slide>>(null);
   const [atual, setAtual] = useState(0);
 
@@ -35,7 +38,9 @@ export default function Onboarding() {
 
   function avancar() {
     if (ultimo) return concluir();
-    lista.current?.scrollToIndex({ index: atual + 1 });
+    // Na web a lista mostra só o slide atual (a rolagem por código não funciona lá).
+    if (!naWeb) lista.current?.scrollToIndex({ index: atual + 1 });
+    setAtual(atual + 1);
   }
 
   return (
@@ -46,9 +51,10 @@ export default function Onboarding() {
 
       <FlatList
         ref={lista}
-        data={slides}
+        data={naWeb ? [slides[atual]] : slides}
         horizontal
         pagingEnabled
+        scrollEnabled={!naWeb}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(s) => s.titulo}
         onMomentumScrollEnd={(e) => setAtual(Math.round(e.nativeEvent.contentOffset.x / width))}

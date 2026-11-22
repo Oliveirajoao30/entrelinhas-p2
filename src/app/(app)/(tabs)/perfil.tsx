@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { ComponentProps, useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Botao } from '@/components/ui/Botao';
+import { confirmar } from '@/utils/confirmar';
 import { Tela } from '@/components/ui/Tela';
 import { fonts, radius, spacing, useCores } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -47,17 +48,10 @@ export default function Perfil() {
   const [erroEstante, setErroEstante] = useState(false);
 
   function confirmarSaida() {
-    Alert.alert('Sair da conta', 'Tem certeza de que deseja sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          await sair();
-          router.replace('/login');
-        },
-      },
-    ]);
+    confirmar('Sair da conta', 'Tem certeza de que deseja sair?', 'Sair', async () => {
+      await sair();
+      router.replace('/login');
+    });
   }
 
   // Recarrega a estante sempre que a aba volta a ficar visível.
