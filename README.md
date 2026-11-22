@@ -6,7 +6,7 @@ favoritos e escreva anotações com nota para cada livro.
 
 Projeto da P2, feito com Expo + React Native + TypeScript.
 
-Vídeo: (link)
+Vídeo: https://youtu.be/AujvjejaQEs
 
 ## Telas
 
