@@ -6,16 +6,17 @@ import { ler, salvar } from '@/storage/armazenamento';
 
 // Tema claro/escuro (Aulas 7 e 10): a preferência fica salva no AsyncStorage
 // (chave 'tema') e todo o app lê as cores pelo hook useCores().
+// Padrão: modo escuro (identidade visual do Entrelinhas); claro e 'sistema' ficam em Configurações.
 
 const CHAVE = 'tema';
 
 export function TemaProvider({ children }: { children: ReactNode }) {
   const sistema = useColorScheme(); // 'light' | 'dark' do aparelho
-  const [preferencia, setPreferenciaState] = useState<PreferenciaTema>('sistema');
+  const [preferencia, setPreferenciaState] = useState<PreferenciaTema>('escuro');
 
   // Ao abrir o app, recupera a escolha salva.
   useEffect(() => {
-    ler<PreferenciaTema>(CHAVE, 'sistema').then(setPreferenciaState);
+    ler<PreferenciaTema>(CHAVE, 'escuro').then(setPreferenciaState);
   }, []);
 
   function setPreferencia(p: PreferenciaTema) {

@@ -54,7 +54,7 @@ export const paletas: Record<ModoTema, Cores> = {
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 
-export const radius = { sm: 6, md: 12, lg: 20, pill: 999 } as const;
+export const radius = { sm: 8, md: 14, lg: 20, pill: 999 } as const;
 
 // Largura máxima do app no navegador: em telas largas ele fica numa coluna centralizada.
 export const LARGURA_WEB = 480;
@@ -62,8 +62,8 @@ export const LARGURA_WEB = 480;
 export const fonts = {
   titulo: 26,
   subtitulo: 19,
-  corpo: 15,
-  pequeno: 13,
+  corpo: 16,
+  pequeno: 14,
   // Serifada nos títulos dá o "ar de livro" sem baixar fontes.
   serifa: Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia, serif' }),
 } as const;
