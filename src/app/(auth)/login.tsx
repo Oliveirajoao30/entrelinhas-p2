@@ -3,6 +3,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Capa } from '@/components/livro/Capa';
 import { Botao } from '@/components/ui/Botao';
 import { CampoTexto } from '@/components/ui/CampoTexto';
 import { Tela } from '@/components/ui/Tela';
@@ -11,6 +12,13 @@ import { useAuth } from '@/context/AuthContext';
 import { validarEmail, validarSenhaLogin } from '@/utils/validacao';
 
 // Rota /login: o grupo (auth) não aparece na URL.
+// Três clássicos em leque no topo do login (ids de capa da Open Library).
+const capasDoLeque = {
+  esquerda: { capaId: 15231557, titulo: 'Dom Casmurro' },
+  centro: { capaId: 12370356, titulo: 'A Hora da Estrela' },
+  direita: { capaId: 15236135, titulo: 'Capitães da Areia' },
+};
+
 export default function Login() {
   const c = useCores();
   const router = useRouter();
@@ -44,6 +52,19 @@ export default function Login() {
   return (
     <KeyboardAvoidingView style={styles.raiz} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Tela rolavel centralizada>
+        {/* Capas em leque */}
+        <View style={styles.leque}>
+          <View style={[styles.capaLado, styles.capaEsquerda]}>
+            <Capa {...capasDoLeque.esquerda} largura={84} />
+          </View>
+          <View style={[styles.capaLado, styles.capaDireita]}>
+            <Capa {...capasDoLeque.direita} largura={84} />
+          </View>
+          <View style={styles.capaCentro}>
+            <Capa {...capasDoLeque.centro} largura={104} />
+          </View>
+        </View>
+
         {/* Marca */}
         <View style={styles.marca}>
           <View style={[styles.logo, { backgroundColor: c.primaria }]}>
@@ -122,6 +143,30 @@ export default function Login() {
 const styles = StyleSheet.create({
   raiz: {
     flex: 1,
+  },
+  leque: {
+    height: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  capaCentro: {
+    position: 'absolute',
+    shadowColor: '#000000',
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
+  },
+  capaLado: {
+    position: 'absolute',
+    opacity: 0.75,
+  },
+  capaEsquerda: {
+    transform: [{ translateX: -62 }, { rotate: '-12deg' }],
+  },
+  capaDireita: {
+    transform: [{ translateX: 62 }, { rotate: '12deg' }],
   },
   marca: {
     alignItems: 'center',
